@@ -28,18 +28,15 @@ public class AESCipher implements ICipher {
     @Override
     public byte[] encrypt(String plainData, String base64Iv, String base64Key) {
         try {
-            Cipher cipher =  Cipher.getInstance(AES_GCM_ALGORITHM);
-            SecretKeySpec keySpec = new SecretKeySpec(getByteArrayFrom(base64Key), "AES");
+            byte[] key = getByteArrayFrom(base64Key);
             byte[] iv = getByteArrayFrom(base64Iv);
-            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
 
-            byte[] encryptedData = cipher.doFinal(plainData.getBytes());
+            Cipher cipher = Cipher.getInstance(AES_GCM_ALGORITHM);
+            cipher.init(Cipher.ENCRYPT_MODE,
+                    new SecretKeySpec(key, "AES"),
+                    new GCMParameterSpec(GCM_TAG_LENGTH, iv));
 
-            ByteBuffer byteBuffer = ByteBuffer.allocate(iv.length + encryptedData.length);
-            byteBuffer.put(iv);
-            byteBuffer.put(encryptedData);
-            return byteBuffer.array();
+            return cipher.doFinal(plainData.getBytes());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -49,12 +46,16 @@ public class AESCipher implements ICipher {
     @Override
     public byte[] decrypt(String base64Data, String base64Iv, String base64Key) {
         try {
-            Cipher cipher =  Cipher.getInstance(AES_GCM_ALGORITHM);
-            byte[] decodedData = getByteArrayFrom(base64Data);
-            AlgorithmParameterSpec gcmIv = new GCMParameterSpec(GCM_TAG_LENGTH, decodedData, 0, GCM_IV_LENGTH);
-            SecretKeySpec keySpec = new SecretKeySpec(getByteArrayFrom(base64Key), "AES");
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmIv);
-            return cipher.doFinal(decodedData, GCM_IV_LENGTH, decodedData.length - GCM_IV_LENGTH);
+            byte[] key = getByteArrayFrom(base64Key);
+            byte[] iv = getByteArrayFrom(base64Iv);
+            byte[] data = getByteArrayFrom(base64Data);
+
+            Cipher cipher = Cipher.getInstance(AES_GCM_ALGORITHM);
+            cipher.init(Cipher.DECRYPT_MODE,
+                    new SecretKeySpec(key, "AES"),
+                    new GCMParameterSpec(GCM_TAG_LENGTH, iv));
+
+            return cipher.doFinal(data);
         } catch (Exception e) {
            e.printStackTrace();
             return null;
